@@ -1,3 +1,6 @@
+// signup.tsx
+// This screen provides a sign-up form using Formik and Yup for form management and validation.
+
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Formik } from "formik";
@@ -15,6 +18,7 @@ import {
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import * as Yup from "yup";
 
+// Validation schema for the sign-up form
 const validationSchema = Yup.object().shape({
   firstName: Yup.string()
     .required("First name is required")
@@ -47,7 +51,8 @@ export default function SignUpScreen() {
     password: string;
     confirmPassword: string;
   }
-
+// Function to handle sign-up submission
+// This function will be called when the form is submitted.
   const handleSignUp = (values: SignUpFormValues) => {
     if (!agreeTerms) {
       Alert.alert("Error", "Please agree to the terms and conditions");
