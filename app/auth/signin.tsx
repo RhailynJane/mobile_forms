@@ -1,3 +1,6 @@
+// signin.tsx
+// This screen provides a sign-in form using Formik and Yup for form management and validation.
+// It includes email/password inputs, show/hide password toggle, and a "remember me" checkbox.
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Formik } from "formik";
@@ -14,6 +17,7 @@ import {
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import * as Yup from "yup";
 
+// Validation schema for the sign-in form
 const validationSchema = Yup.object().shape({
   email: Yup.string()
     .required("Email is required")
@@ -24,6 +28,7 @@ const validationSchema = Yup.object().shape({
 });
 
 export default function SignInScreen() {
+  // State to manage password visibility and remember me checkbox
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -32,6 +37,8 @@ export default function SignInScreen() {
     password: string;
   }
 
+  // Function to handle sign-in submission
+  // This function will be called when the form is submitted.
   const handleSignIn = (values: SignInFormValues) => {
     console.log("Sign In Values:", values);
     Alert.alert("Success", "Sign in successful!", [
