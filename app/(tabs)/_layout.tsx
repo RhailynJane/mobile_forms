@@ -1,8 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Tabs, router } from "expo-router";
+import { signOut } from "firebase/auth";
 import React from "react";
+import { TouchableOpacity } from "react-native";
+import { auth } from "../../lib/firebase";
 
 export default function TabLayout() {
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.replace("/auth");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
+
   return (
     <Tabs
       screenOptions={{
@@ -15,6 +27,11 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: "#fff",
         },
+        headerRight: () => (
+          <TouchableOpacity onPress={handleSignOut} style={{ marginRight: 15 }}>
+            <Ionicons name="log-out-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        ),
       }}
     >
       <Tabs.Screen
@@ -31,12 +48,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="auth"
+        name="employees"
         options={{
-          title: "Authentication",
+          title: "Employees",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "lock-closed" : "lock-closed-outline"}
+              name={focused ? "people" : "people-outline"}
               color={color}
               size={24}
             />

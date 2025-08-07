@@ -1,4 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
+import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { Formik } from "formik";
 import React, { useState } from "react";
 import {
@@ -12,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Yup from "yup";
+import { db } from "../../lib/firebase";
 
 const validationSchema = Yup.object().shape({
   fullName: Yup.string()
@@ -45,7 +48,46 @@ const validationSchema = Yup.object().shape({
 export default function EmployeeForm() {
   const [isFullTime, setIsFullTime] = useState(false);
 
-  const handleSubmit = (
+  const checkForDuplicates = async (email: string, employeeId: string) => {
+    try {
+      // Check for duplicate email
+      const emailQuery = query(
+        collection(db, "employees"),
+        where("email", "==", email)
+      );
+      const emailSnapshot = await getDocs(emailQuery);
+
+      if (!emailSnapshot.empty) {
+        return {
+          isDuplicate: true,
+          field: "email",
+          message: "Email already exists",
+        };
+      }
+
+      // Check for duplicate employee ID
+      const idQuery = query(
+        collection(db, "employees"),
+        where("employeeId", "==", employeeId)
+      );
+      const idSnapshot = await getDocs(idQuery);
+
+      if (!idSnapshot.empty) {
+        return {
+          isDuplicate: true,
+          field: "employeeId",
+          message: "Employee ID already exists",
+        };
+      }
+
+      return { isDuplicate: false, field: null, message: null };
+    } catch (error) {
+      console.error("Error checking for duplicates:", error);
+      throw error;
+    }
+  };
+
+  const handleSubmit = async (
     values: {
       fullName: string;
       email: string;
@@ -57,6 +99,7 @@ export default function EmployeeForm() {
     },
     {
       resetForm,
+      setFieldError,
     }: import("formik").FormikHelpers<{
       fullName: string;
       email: string;
@@ -67,14 +110,48 @@ export default function EmployeeForm() {
       salary: string;
     }>
   ) => {
-    const employeeData = {
-      ...values,
-      employmentType: isFullTime ? "Full-Time" : "Part-Time",
-    };
-    console.log("Submitted Employee Data:", employeeData);
-    Alert.alert("Success", "Employee information saved successfully!", [
-      { text: "OK", onPress: () => resetForm() },
-    ]);
+    try {
+      // Check for duplicates before saving
+      const duplicateCheck = await checkForDuplicates(
+        values.email,
+        values.employeeId
+      );
+
+      if (duplicateCheck.isDuplicate) {
+        setFieldError(duplicateCheck.field!, duplicateCheck.message!);
+        Alert.alert("Duplicate Found", duplicateCheck.message!);
+        return;
+      }
+
+      const employeeData = {
+        ...values,
+        employmentType: isFullTime ? "Full-Time" : "Part-Time",
+        createdAt: new Date(),
+      };
+
+      await addDoc(collection(db, "employees"), employeeData);
+
+      Alert.alert("Success", "Employee information saved successfully!", [
+        {
+          text: "Add More Employee",
+          onPress: () => {
+            resetForm();
+            setIsFullTime(false);
+          },
+        },
+        {
+          text: "View Employees",
+          onPress: () => {
+            resetForm();
+            setIsFullTime(false);
+            router.push("/employees");
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error("Error saving data:", error);
+      Alert.alert("Error", "Failed to save employee data.");
+    }
   };
 
   return (
@@ -112,144 +189,72 @@ export default function EmployeeForm() {
               touched,
             }) => (
               <View style={styles.form}>
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Full Name"
-                    onChangeText={handleChange("fullName")}
-                    onBlur={handleBlur("fullName")}
-                    value={values.fullName}
-                  />
-                </View>
-                {errors.fullName && touched.fullName && (
-                  <Text style={styles.errorText}>{errors.fullName}</Text>
-                )}
+                {[
+                  {
+                    name: "fullName",
+                    icon: "person-outline",
+                    placeholder: "Full Name",
+                  },
+                  {
+                    name: "email",
+                    icon: "mail-outline",
+                    placeholder: "Email",
+                    keyboardType: "email-address",
+                  },
+                  {
+                    name: "employeeId",
+                    icon: "id-card-outline",
+                    placeholder: "Employee ID (e.g., EMP123)",
+                  },
+                  {
+                    name: "department",
+                    icon: "business-outline",
+                    placeholder: "Department",
+                  },
+                  {
+                    name: "phoneNumber",
+                    icon: "call-outline",
+                    placeholder: "Phone Number",
+                    keyboardType: "phone-pad",
+                  },
+                  {
+                    name: "position",
+                    icon: "briefcase-outline",
+                    placeholder: "Position",
+                  },
+                  {
+                    name: "salary",
+                    icon: "cash-outline",
+                    placeholder: "Salary",
+                    keyboardType: "numeric",
+                  },
+                ].map(({ name, icon, placeholder, keyboardType }) => (
+                  <View key={name}>
+                    <View style={styles.inputContainer}>
+                      <Ionicons
+                        name={icon as any}
+                        size={20}
+                        color="#666"
+                        style={styles.inputIcon}
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder={placeholder}
+                        onChangeText={handleChange(name)}
+                        onBlur={handleBlur(name)}
+                        value={values[name as keyof typeof values]}
+                        keyboardType={keyboardType as any}
+                      />
+                    </View>
+                    {errors[name as keyof typeof errors] &&
+                      touched[name as keyof typeof touched] && (
+                        <Text style={styles.errorText}>
+                          {errors[name as keyof typeof errors]}
+                        </Text>
+                      )}
+                  </View>
+                ))}
 
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Email"
-                    onChangeText={handleChange("email")}
-                    onBlur={handleBlur("email")}
-                    value={values.email}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
-                {errors.email && touched.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
-                )}
-
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="id-card-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Employee ID (e.g., EMP123)"
-                    onChangeText={handleChange("employeeId")}
-                    onBlur={handleBlur("employeeId")}
-                    value={values.employeeId}
-                  />
-                </View>
-                {errors.employeeId && touched.employeeId && (
-                  <Text style={styles.errorText}>{errors.employeeId}</Text>
-                )}
-
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="business-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Department"
-                    onChangeText={handleChange("department")}
-                    onBlur={handleBlur("department")}
-                    value={values.department}
-                  />
-                </View>
-                {errors.department && touched.department && (
-                  <Text style={styles.errorText}>{errors.department}</Text>
-                )}
-
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="call-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Phone Number"
-                    onChangeText={handleChange("phoneNumber")}
-                    onBlur={handleBlur("phoneNumber")}
-                    value={values.phoneNumber}
-                    keyboardType="phone-pad"
-                  />
-                </View>
-                {errors.phoneNumber && touched.phoneNumber && (
-                  <Text style={styles.errorText}>{errors.phoneNumber}</Text>
-                )}
-
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="briefcase-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Position"
-                    onChangeText={handleChange("position")}
-                    onBlur={handleBlur("position")}
-                    value={values.position}
-                  />
-                </View>
-                {errors.position && touched.position && (
-                  <Text style={styles.errorText}>{errors.position}</Text>
-                )}
-
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="cash-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Salary"
-                    onChangeText={handleChange("salary")}
-                    onBlur={handleBlur("salary")}
-                    value={values.salary}
-                    keyboardType="numeric"
-                  />
-                </View>
-                {errors.salary && touched.salary && (
-                  <Text style={styles.errorText}>{errors.salary}</Text>
-                )}
-
-                {/* Employment Type Toggle */}
                 <View style={styles.toggleContainer}>
                   <Text style={styles.toggleLabel}>Employment Type:</Text>
                   <TouchableOpacity

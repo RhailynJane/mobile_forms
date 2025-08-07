@@ -1,9 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { Formik } from "formik";
 import React, { useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -14,6 +17,9 @@ import {
 } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import * as Yup from "yup";
+
+// Initialize Firebase Auth instance
+const auth = getAuth();
 
 const validationSchema = Yup.object().shape({
   firstName: Yup.string()
@@ -48,194 +54,213 @@ export default function SignUpScreen() {
     confirmPassword: string;
   }
 
-  const handleSignUp = (values: SignUpFormValues) => {
+  const handleSignUp = async (values: SignUpFormValues) => {
     if (!agreeTerms) {
       Alert.alert("Error", "Please agree to the terms and conditions");
       return;
     }
-    console.log("Sign Up Values:", values);
-    Alert.alert("Success", "Account created successfully!", [
-      { text: "OK", onPress: () => router.replace("/auth/signin") },
-    ]);
+    try {
+      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      Alert.alert("Success", "Account created successfully! Please sign in.", [
+        { text: "OK", onPress: () => router.replace("/auth/signin") },
+      ]);
+    } catch (error: any) {
+      Alert.alert("Sign Up Error", error.message);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          <Ionicons
-            name="person-add"
-            size={60}
-            color="#007bff"
-            style={styles.icon}
-          />
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join us today!</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            <Ionicons
+              name="person-add"
+              size={60}
+              color="#007bff"
+              style={styles.icon}
+            />
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join us today!</Text>
 
-          <Formik
-            initialValues={{
-              firstName: "",
-              lastName: "",
-              email: "",
-              password: "",
-              confirmPassword: "",
-            }}
-            validationSchema={validationSchema}
-            onSubmit={handleSignUp}
-          >
-            {({
-              handleChange,
-              handleBlur,
-              handleSubmit,
-              values,
-              errors,
-              touched,
-            }) => (
-              <View style={styles.form}>
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    placeholder="First Name"
-                    value={values.firstName}
-                    onChangeText={handleChange("firstName")}
-                    onBlur={handleBlur("firstName")}
-                    style={styles.input}
-                  />
-                </View>
-                {errors.firstName && touched.firstName && (
-                  <Text style={styles.errorText}>{errors.firstName}</Text>
-                )}
-
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    placeholder="Last Name"
-                    value={values.lastName}
-                    onChangeText={handleChange("lastName")}
-                    onBlur={handleBlur("lastName")}
-                    style={styles.input}
-                  />
-                </View>
-                {errors.lastName && touched.lastName && (
-                  <Text style={styles.errorText}>{errors.lastName}</Text>
-                )}
-
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    placeholder="Email Address"
-                    value={values.email}
-                    onChangeText={handleChange("email")}
-                    onBlur={handleBlur("email")}
-                    style={styles.input}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
-                {errors.email && touched.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
-                )}
-
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    placeholder="Password"
-                    value={values.password}
-                    onChangeText={handleChange("password")}
-                    onBlur={handleBlur("password")}
-                    style={styles.input}
-                    secureTextEntry={!showPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeIcon}
-                  >
+            <Formik
+              initialValues={{
+                firstName: "",
+                lastName: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+              }}
+              validationSchema={validationSchema}
+              onSubmit={handleSignUp}
+            >
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+              }) => (
+                <View style={styles.form}>
+                  <View style={styles.inputContainer}>
                     <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      name="person-outline"
                       size={20}
                       color="#666"
+                      style={styles.inputIcon}
                     />
-                  </TouchableOpacity>
-                </View>
-                {errors.password && touched.password && (
-                  <Text style={styles.errorText}>{errors.password}</Text>
-                )}
+                    <TextInput
+                      placeholder="First Name"
+                      value={values.firstName}
+                      onChangeText={handleChange("firstName")}
+                      onBlur={handleBlur("firstName")}
+                      style={styles.input}
+                    />
+                  </View>
+                  {errors.firstName && touched.firstName && (
+                    <Text style={styles.errorText}>{errors.firstName}</Text>
+                  )}
 
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    placeholder="Confirm Password"
-                    value={values.confirmPassword}
-                    onChangeText={handleChange("confirmPassword")}
-                    onBlur={handleBlur("confirmPassword")}
-                    style={styles.input}
-                    secureTextEntry={!showConfirmPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={styles.eyeIcon}
-                  >
+                  <View style={styles.inputContainer}>
                     <Ionicons
-                      name={
-                        showConfirmPassword ? "eye-off-outline" : "eye-outline"
+                      name="person-outline"
+                      size={20}
+                      color="#666"
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      placeholder="Last Name"
+                      value={values.lastName}
+                      onChangeText={handleChange("lastName")}
+                      onBlur={handleBlur("lastName")}
+                      style={styles.input}
+                    />
+                  </View>
+                  {errors.lastName && touched.lastName && (
+                    <Text style={styles.errorText}>{errors.lastName}</Text>
+                  )}
+
+                  <View style={styles.inputContainer}>
+                    <Ionicons
+                      name="mail-outline"
+                      size={20}
+                      color="#666"
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      placeholder="Email Address"
+                      value={values.email}
+                      onChangeText={handleChange("email")}
+                      onBlur={handleBlur("email")}
+                      style={styles.input}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  {errors.email && touched.email && (
+                    <Text style={styles.errorText}>{errors.email}</Text>
+                  )}
+
+                  <View style={styles.inputContainer}>
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={20}
+                      color="#666"
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      placeholder="Password"
+                      value={values.password}
+                      onChangeText={handleChange("password")}
+                      onBlur={handleBlur("password")}
+                      style={styles.input}
+                      secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                      style={styles.eyeIcon}
+                    >
+                      <Ionicons
+                        name={showPassword ? "eye-off-outline" : "eye-outline"}
+                        size={20}
+                        color="#666"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.password && touched.password && (
+                    <Text style={styles.errorText}>{errors.password}</Text>
+                  )}
+
+                  <View style={styles.inputContainer}>
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={20}
+                      color="#666"
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      placeholder="Confirm Password"
+                      value={values.confirmPassword}
+                      onChangeText={handleChange("confirmPassword")}
+                      onBlur={handleBlur("confirmPassword")}
+                      style={styles.input}
+                      secureTextEntry={!showConfirmPassword}
+                    />
+                    <TouchableOpacity
+                      onPress={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
                       }
+                      style={styles.eyeIcon}
+                    >
+                      <Ionicons
+                        name={
+                          showConfirmPassword
+                            ? "eye-off-outline"
+                            : "eye-outline"
+                        }
+                        size={20}
+                        color="#666"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.confirmPassword && touched.confirmPassword && (
+                    <Text style={styles.errorText}>
+                      {errors.confirmPassword}
+                    </Text>
+                  )}
+
+                  <View style={styles.checkboxContainer}>
+                    <BouncyCheckbox
                       size={20}
-                      color="#666"
+                      fillColor="#007bff"
+                      unfillColor="#FFFFFF"
+                      text="I agree to the Terms and Conditions"
+                      isChecked={agreeTerms}
+                      onPress={() => setAgreeTerms(!agreeTerms)}
+                      textStyle={styles.checkboxText}
                     />
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.submitButton}
+                    onPress={() => handleSubmit()}
+                  >
+                    <Text style={styles.submitButtonText}>Create Account</Text>
                   </TouchableOpacity>
                 </View>
-                {errors.confirmPassword && touched.confirmPassword && (
-                  <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-                )}
-
-                <View style={styles.checkboxContainer}>
-                  <BouncyCheckbox
-                    size={20}
-                    fillColor="#007bff"
-                    unfillColor="#FFFFFF"
-                    text="I agree to the Terms and Conditions"
-                    isChecked={agreeTerms}
-                    onPress={() => setAgreeTerms(!agreeTerms)}
-                    textStyle={styles.checkboxText}
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={styles.submitButton}
-                  onPress={() => handleSubmit()}
-                >
-                  <Text style={styles.submitButtonText}>Create Account</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </Formik>
-        </View>
-      </ScrollView>
+              )}
+            </Formik>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -245,13 +270,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   scrollContent: {
-    flexGrow: 1,
+    paddingBottom: 100,
+    paddingTop: 40,
   },
   content: {
-    flex: 1,
     padding: 20,
-    justifyContent: "center",
   },
   icon: {
     alignSelf: "center",
@@ -298,6 +325,7 @@ const styles = StyleSheet.create({
     color: "#dc3545",
     fontSize: 14,
     marginTop: -10,
+    marginBottom: 10,
   },
   checkboxContainer: {
     marginBottom: 30,

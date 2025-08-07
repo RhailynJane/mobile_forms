@@ -19,14 +19,17 @@ export default function AuthScreen() {
           color="#007bff"
           style={styles.icon}
         />
-        <Text style={styles.title}>Authentication</Text>
-        <Text style={styles.subtitle}>Choose your authentication method</Text>
+        <Text style={styles.title}>Welcome</Text>
+        <Text style={styles.subtitle}>Employee Management System</Text>
+        <Text style={styles.description}>
+          Manage your employees efficiently with our comprehensive system
+        </Text>
 
         <Link href="/auth/signin" asChild>
           <TouchableOpacity
             style={{ ...styles.button, ...styles.signInButton }}
           >
-            <Ionicons name="log-in-outline" size={20} />
+            <Ionicons name="log-in-outline" size={20} color="#fff" />
             <Text style={styles.signInText}>Sign In</Text>
           </TouchableOpacity>
         </Link>
@@ -36,7 +39,7 @@ export default function AuthScreen() {
             style={{ ...styles.button, ...styles.signUpButton }}
           >
             <Ionicons name="person-add-outline" size={20} color="#007bff" />
-            <Text style={styles.signUpText}>Sign Up</Text>
+            <Text style={styles.signUpText}>Create Account</Text>
           </TouchableOpacity>
         </Link>
       </View>
@@ -52,49 +55,61 @@ const styles = StyleSheet.create({
   card: {
     marginTop: 100,
     backgroundColor: "#fff",
-    paddingVertical: 40,
-    paddingHorizontal: 25,
-    borderRadius: 16,
+    paddingVertical: 50,
+    paddingHorizontal: 30,
+    borderRadius: 20,
     alignItems: "center",
     marginHorizontal: 20,
     // Shadow for iOS
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
     // Elevation for Android
-    elevation: 5,
+    elevation: 8,
   },
   icon: {
-    marginBottom: 20,
+    marginBottom: 30,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 32,
+    fontWeight: "bold",
     color: "#212529",
-    marginBottom: 6,
+    marginBottom: 8,
   },
   subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#007bff",
+    marginBottom: 10,
+  },
+  description: {
     fontSize: 14,
     color: "#6c757d",
     textAlign: "center",
-    marginBottom: 30,
+    marginBottom: 40,
+    lineHeight: 20,
   },
   button: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     marginBottom: 15,
   },
   signInButton: {
     backgroundColor: "#007bff",
+    shadowColor: "#007bff",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   signInText: {
-    color: "#212529",
+    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 10,
